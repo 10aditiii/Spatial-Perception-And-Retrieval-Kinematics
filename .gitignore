@@ -1,0 +1,15 @@
+# Datasets (large, regenerable via scripts)
+freiburg_groceries_dataset/
+dataset_split/
+
+# Trained weights and training run outputs
+runs/
+*.pt
+
+# Memory/state files generated at runtime
+spatial_memory.json
+test_memory.json
+
+# Python cache
+__pycache__/
+*.pyc
