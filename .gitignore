@@ -10,6 +10,26 @@ runs/
 spatial_memory.json
 test_memory.json
 
-# Python cache
+# Byte-compiled / optimized / DLL files
 __pycache__/
+*.py[codz]
+*$py.class
 *.pyc
+
+# Distribution / packaging
+build/
+dist/
+*.egg-info/
+
+# Environments
+.env
+.venv
+env/
+venv/
+
+# Jupyter Notebook
+.ipynb_checkpoints
+
+# Editor/IDE
+.vscode/
+.idea/
