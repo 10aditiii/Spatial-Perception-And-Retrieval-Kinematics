@@ -17,7 +17,7 @@ Final-year B.Tech (CSE, AI & Robotics) project.
   Groceries Dataset — 89.7% Top-1 / 98.6% Top-5 accuracy on the val split)
 - **Spatial memory**: remembers `(item, location, last-seen time, confidence)`
   every time something is detected and classified, persisted to
-  `spatial_memory.json`
+  `spatial_memory.db`
 - **Retrieval + smart search**: given "where is X", recalls its last known
   location, moves there (simulated) and re-verifies with the camera; if it's
   not there anymore, checks the closest / most-recently-active other known
@@ -60,7 +60,7 @@ Camera frame
 ## Setup
 
 ```bash
-pip install -U ultralytics opencv-python
+pip install -r requirements.txt
 ```
 
 ## Reproducing from scratch
@@ -86,18 +86,26 @@ pip install -U ultralytics opencv-python
 
 **Scan phase** (populate spatial memory by visiting each simulated waypoint):
 ```bash
-python run_pipeline.py --cls_weights "runs/classify/train/weights/best.pt"
+python run_pipeline.py
 ```
 
 **Query phase** (ask where an item is):
 ```bash
-python query_item.py --cls_weights "runs/classify/train/weights/best.pt" --item "Water"
+python query_item.py --item "Water"
+```
+
+### 🖥️ Live Dashboard (Recommended)
+
+To run the interactive web interface showing the live camera feed, 2D map, and spatial memory table:
+```bash
+streamlit run dashboard.py
 ```
 
 **Other scripts:**
 - `predict.py` — quick single-image/folder inference test on the trained classifier
 - `realtime_detect.py` — live webcam detection only (generic COCO classes)
 - `sim_world.py` — the simulated 2D environment (waypoints, robot pose, navigation)
+- `test_demo.py` — mock simulation script to verify memory and smart search logic
 
 ## Tech stack
 

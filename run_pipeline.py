@@ -15,57 +15,47 @@ Usage:
     python run_pipeline.py --cls_weights "runs/classify/train-2/weights/best.pt"
 """
 import argparse
-import cv2
-from ultralytics import YOLO
 
+from vision_system import VisionSystem
 from cognitive_memory import CognitiveMemory
 from sim_world import Robot, WAYPOINTS
 
 
-def scan_here(detector, classifier, robot, memory, conf_thresh, camera):
+def scan_here(vision, robot, memory):
     """Capture one frame from the webcam, run detect+classify, remember
     anything found at the robot's current position."""
-    cap = cv2.VideoCapture(camera)
-    ok, frame = cap.read()
-    cap.release()
-    if not ok:
-        print("  [warn] could not read from camera, skipping this stop")
+    results, frame = vision.capture_and_analyze()
+
+    if not results:
+        print("  [seen] nothing recognized at this stop")
         return
 
-    det_results = detector.predict(frame, conf=conf_thresh, verbose=False)[0]
-    found_any = False
-    for box in det_results.boxes:
-        x1, y1, x2, y2 = map(int, box.xyxy[0])
-        x1, y1 = max(0, x1), max(0, y1)
-        x2, y2 = min(frame.shape[1], x2), min(frame.shape[0], y2)
-        crop = frame[y1:y2, x1:x2]
-        if crop.size == 0:
-            continue
-
-        cls_result = classifier.predict(crop, verbose=False)[0]
-        top1_idx = int(cls_result.probs.top1)
-        top1_conf = float(cls_result.probs.top1conf)
-        label = cls_result.names[top1_idx]
-
-        memory.remember(label, x=robot.x, y=robot.y, confidence=top1_conf, zone=robot.current_zone)
-        print(f"  [seen] {label} (confidence {top1_conf*100:.0f}%) -> remembered at "
+    for res in results:
+        memory.remember(res.label, x=robot.x, y=robot.y, confidence=res.confidence, zone=robot.current_zone)
+        print(f"  [seen] {res.label} (confidence {res.confidence*100:.0f}%) -> remembered at "
               f"{robot.current_zone} ({robot.x:.1f}, {robot.y:.1f})")
-        found_any = True
-
-    if not found_any:
-        print("  [seen] nothing recognized at this stop")
 
 
 def main():
+    import json
+    with open("config.json", "r") as f:
+        config = json.load(f)
+
     ap = argparse.ArgumentParser()
-    ap.add_argument("--det_weights", default="yolo26n.pt")
-    ap.add_argument("--cls_weights", required=True)
-    ap.add_argument("--conf", type=float, default=0.4)
-    ap.add_argument("--camera", type=int, default=0)
+    ap.add_argument("--det_weights", default=config["models"]["detector_weights"])
+    ap.add_argument("--cls_weights", default=config["models"]["classifier_weights"])
+    ap.add_argument("--conf", type=float, default=config["models"]["confidence_threshold"])
+    ap.add_argument("--camera", type=int, default=config["camera"]["index"])
     args = ap.parse_args()
 
-    detector = YOLO(args.det_weights)
-    classifier = YOLO(args.cls_weights)
+    vision = VisionSystem(
+        args.det_weights, 
+        args.cls_weights, 
+        args.camera, 
+        args.conf,
+        required_frames=config["camera"].get("required_frames", 3),
+        max_attempts=config["camera"].get("max_attempts", 10)
+    )
     memory = CognitiveMemory()
     robot = Robot()
 
@@ -75,10 +65,10 @@ def main():
     for name in WAYPOINTS:
         robot.move_to_waypoint(name)
         input(f"  -> Show an item to the camera for '{name}', then press Enter...")
-        scan_here(detector, classifier, robot, memory, args.conf, args.camera)
+        scan_here(vision, robot, memory)
         print()
 
-    print("Scan complete. Memory saved to spatial_memory.json")
+    print("Scan complete. Memory saved to spatial_memory.db")
     print(f"Items remembered: {[e.item for e in memory.all_items()]}")
 
 
