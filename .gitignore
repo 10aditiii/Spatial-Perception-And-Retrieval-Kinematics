@@ -1,0 +1,28 @@
+# ---- Python ----
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+env/
+
+# ---- Editor / OS ----
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# ---- Large or generated data (not pushed) ----
+dataset_split/
+freiburg_groceries_dataset/
+runs/
+*.cache
+spatial_memory.db
+test_memory.db
+dashboard_backup.py
+
+# ---- Model weights: ignore by default, but KEEP the ones the app needs ----
+*.pt
+!weights/
+!weights/classifier_best.pt
+!yolo26n.pt
+*.zip
